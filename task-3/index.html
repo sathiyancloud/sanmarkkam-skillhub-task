@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TN Snacks Shop 🛒</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        
+        header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; text-align: center; border-bottom: 2px solid #00d4aa; }
+        header h1 { font-size: 28px; color: #00d4aa; }
+        header p { color: #94a3b8; font-size: 14px; margin-top: 4px; }
+        
+        .server-info { background: #1e293b; padding: 8px 16px; text-align: center; font-size: 12px; color: #64748b; border-bottom: 1px solid #334155; }
+        .server-info span { color: #00d4aa; font-weight: bold; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+        
+        .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        
+        .product-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; transition: all 0.2s; }
+        .product-card:hover { border-color: #00d4aa; transform: translateY(-2px); }
+        .product-emoji { font-size: 48px; text-align: center; margin-bottom: 12px; }
+        .product-name { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+        .product-desc { font-size: 13px; color: #94a3b8; margin: 6px 0 12px; }
+        .product-price { font-size: 22px; font-weight: 700; color: #00d4aa; }
+        .product-price small { font-size: 13px; color: #64748b; font-weight: 400; }
+        
+        .add-btn { width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 8px; background: #00d4aa; color: #0f172a; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+        .add-btn:hover { background: #00f0c0; }
+        .add-btn.added { background: #334155; color: #94a3b8; }
+        
+        .cart { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+        .cart h2 { font-size: 20px; color: #f1f5f9; margin-bottom: 12px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 14px; }
+        .cart-total { display: flex; justify-content: space-between; padding: 12px 0 0; font-size: 18px; font-weight: 700; color: #00d4aa; }
+        .cart-empty { color: #64748b; font-size: 14px; text-align: center; padding: 20px; }
+        
+        .order-btn { width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 8px; background: #f97316; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; }
+        .order-btn:hover { background: #fb923c; }
+        .order-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        
+        .success-msg { text-align: center; padding: 24px; }
+        .success-msg h3 { color: #00d4aa; font-size: 24px; margin-bottom: 8px; }
+        
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 12px; border-top: 1px solid #1e293b; margin-top: 40px; }
+        footer span { color: #00d4aa; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🛒 TN Snacks Shop</h1>
+        <p>தமிழ்நாடு சிற்றுண்டி கடை — Order Online!</p>
+    </header>
+    
+    <div class="server-info">
+        Running on: <span id="serverInfo">loading...</span> | 
+        Time: <span id="serverTime">loading...</span> |
+        Status: <span style="color: #22c55e;">● Live</span>
+    </div>
+
+    <div class="container">
+        <div class="products" id="products"></div>
+        <div class="cart" id="cart">
+            <h2>🛒 Your Cart</h2>
+            <div id="cartItems"><div class="cart-empty">Cart is empty — add some snacks!</div></div>
+        </div>
+    </div>
+
+    <footer>
+        Built with ❤️ for Education Trust NGO Demo | 
+        This is a <span>product/software/app</span> — running on a <span>server</span> — that's IT infrastructure!
+    </footer>
+
+    <script>
+        const PRODUCTS = [
+            { id: 1, name: "Murukku", emoji: "🥨", desc: "Crispy rice flour snack — classic TN style", price: 120 },
+            { id: 2, name: "Mixture", emoji: "🥜", desc: "Spicy mixture with peanuts & dal", price: 80 },
+            { id: 3, name: "Banana Chips", emoji: "🍌", desc: "Kerala-style banana chips, salted", price: 100 },
+            { id: 4, name: "Mysore Pak", emoji: "🟨", desc: "Ghee-rich sweet from Mysore", price: 200 },
+            { id: 5, name: "Adhirasam", emoji: "🍩", desc: "Traditional jaggery donut — festival special", price: 150 },
+            { id: 6, name: "Filter Coffee", emoji: "☕", desc: "Strong South Indian filter kaapi", price: 40 },
+        ];
+
+        let cart = {};
+        let ordered = false;
+
+        // Detect server info
+        const hostname = window.location.hostname;
+        let serverLabel = "localhost (your laptop)";
+        if (hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes(".local")) {
+            serverLabel = hostname + " (Cloud Server ☁️)";
+        } else if (hostname.includes(".local")) {
+            serverLabel = hostname + " (DNS mapped! 📞)";
+        }
+        document.getElementById("serverInfo").textContent = serverLabel;
+        
+        setInterval(() => {
+            document.getElementById("serverTime").textContent = new Date().toLocaleTimeString("en-IN");
+        }, 1000);
+
+        function renderProducts() {
+            const el = document.getElementById("products");
+            el.innerHTML = PRODUCTS.map(p => `
+                <div class="product-card">
+                    <div class="product-emoji">${p.emoji}</div>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-desc">${p.desc}</div>
+                    <div class="product-price">₹${p.price} <small>/ pack</small></div>
+                    <button class="add-btn ${cart[p.id] ? 'added' : ''}" onclick="toggleCart(${p.id})">
+                        ${cart[p.id] ? '✓ Added' : '+ Add to Cart'}
+                    </button>
+                </div>
+            `).join("");
+        }
+
+        function toggleCart(id) {
+            if (ordered) return;
+            if (cart[id]) { delete cart[id]; } 
+            else { cart[id] = PRODUCTS.find(p => p.id === id); }
+            renderProducts();
+            renderCart();
+        }
+
+        function renderCart() {
+            const el = document.getElementById("cartItems");
+            const items = Object.values(cart);
+            if (items.length === 0) {
+                el.innerHTML = '<div class="cart-empty">Cart is empty — add some snacks!</div>';
+                return;
+            }
+            const total = items.reduce((s, p) => s + p.price, 0);
+            el.innerHTML = items.map(p => `
+                <div class="cart-item">
+                    <span>${p.emoji} ${p.name}</span>
+                    <span>₹${p.price}</span>
+                </div>
+            `).join("") + `
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span>₹${total}</span>
+                </div>
+                <button class="order-btn" onclick="placeOrder()">🎉 Place Order</button>
+            `;
+        }
+
+        function placeOrder() {
+            ordered = true;
+            const total = Object.values(cart).reduce((s, p) => s + p.price, 0);
+            document.getElementById("cart").innerHTML = `
+                <div class="success-msg">
+                    <h3>🎉 Order Placed!</h3>
+                    <p>Total: ₹${total}</p>
+                    <p style="color: #94a3b8; margin-top: 8px; font-size: 14px;">
+                        This order was processed by a <strong style="color: #00d4aa;">server</strong> — 
+                        that server needs <strong style="color: #f97316;">infrastructure</strong> — 
+                        and that's what <strong style="color: #58a6ff;">DevOps engineers</strong> build! 🚀
+                    </p>
+                    <button class="order-btn" style="max-width:200px; margin-top:16px;" onclick="location.reload()">🔄 Start Over</button>
+                </div>
+            `;
+        }
+
+        renderProducts();
+        renderCart();
+    </script>
+</body>
+</html>
